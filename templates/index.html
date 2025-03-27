@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Handwriting Analysis & Improvement</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .upload-area {
+            border: 2px dashed #007bff;
+            border-radius: 5px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            background-color: #f8f9fa;
+        }
+        .results {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+        }
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            margin-bottom: 20px;
+        }
+        .loader {
+            display: none;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error-message {
+            display: none;
+            color: #dc3545;
+            margin-top: 15px;
+            padding: 10px;
+            border: 1px solid #dc3545;
+            border-radius: 5px;
+            background-color: #f8d7da;
+        }
+        .error-details {
+            display: none;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .suggestion-card {
+            margin-top: 20px;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Handwriting Analysis & Improvement</h1>
+        <p class="text-center mb-4">Upload an image of a handwritten character to get analysis and improvement suggestions</p>
+        
+        <div class="upload-area" id="uploadArea">
+            <h5>Drop an image here or click to upload</h5>
+            <p class="text-muted">Supports JPG, JPEG, PNG</p>
+            <input type="file" id="fileInput" accept=".jpg, .jpeg, .png" hidden>
+        </div>
+        
+        <div class="loader" id="loader"></div>
+        <div class="error-message" id="errorMessage"></div>
+        <div class="error-details" id="errorDetails"></div>
+        
+        <div class="results" id="results">
+            <div class="row">
+                <div class="col-md-5">
+                    <img id="previewImage" class="preview-image" src="" alt="Preview">
+                </div>
+                <div class="col-md-7">
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            Character Recognition Results
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Predicted Character:</strong> <span id="prediction" class="fs-4"></span></p>
+                            <p><strong>Confidence:</strong> <span id="confidence"></span></p>
+                            <p><strong>Accuracy:</strong> <span id="accuracy"></span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="card suggestion-card">
+                        <div class="card-header bg-success text-white">
+                            Writing Improvement Suggestions
+                        </div>
+                        <div class="card-body">
+                            <div id="suggestions"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            const results = document.getElementById('results');
+            const previewImage = document.getElementById('previewImage');
+            const prediction = document.getElementById('prediction');
+            const confidence = document.getElementById('confidence');
+            const accuracy = document.getElementById('accuracy');
+            const suggestions = document.getElementById('suggestions');
+            const loader = document.getElementById('loader');
+            const errorMessage = document.getElementById('errorMessage');
+            const errorDetails = document.getElementById('errorDetails');
+
+            // Click on upload area to trigger file input
+            uploadArea.addEventListener('click', function() {
+                fileInput.click();
+            });
+
+            // Handle drag and drop
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.style.backgroundColor = '#f8f9fa';
+            });
+
+            uploadArea.addEventListener('dragleave', function() {
+                uploadArea.style.backgroundColor = '';
+            });
+
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.style.backgroundColor = '';
+                
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFile(e.dataTransfer.files[0]);
+                }
+            });
+
+            // Handle file selection
+            fileInput.addEventListener('change', function() {
+                if (fileInput.files.length) {
+                    handleFile(fileInput.files[0]);
+                }
+            });
+
+            function handleFile(file) {
+                // Reset display
+                errorMessage.style.display = 'none';
+                errorDetails.style.display = 'none';
+                loader.style.display = 'block';
+                results.style.display = 'none';
+                
+                // Create preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+                
+                // Upload file
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Server error: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    loader.style.display = 'none';
+                    
+                    if (data.error) {
+                        errorMessage.textContent = 'Error: ' + data.error;
+                        errorMessage.style.display = 'block';
+                        
+                        if (data.details) {
+                            errorDetails.textContent = data.details;
+                            errorDetails.style.display = 'block';
+                        }
+                        return;
+                    }
+                    
+                    results.style.display = 'block';
+                    prediction.textContent = data.prediction;
+                    confidence.textContent = data.confidence;
+                    accuracy.textContent = data.accuracy;
+                    
+                    // Format suggestions with Markdown-like parsing
+                    let formattedSuggestions = data.suggestions
+                        .replace(/\n\n/g, '<br><br>')
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.*?)\*/g, '<em>$1</em>');
+                    
+                    suggestions.innerHTML = formattedSuggestions;
+                })
+                .catch(error => {
+                    loader.style.display = 'none';
+                    errorMessage.textContent = 'Error: ' + error.message;
+                    errorMessage.style.display = 'block';
+                    console.error('Error:', error);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

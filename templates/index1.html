@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Analysis Tool</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #4a6de5;
+            --primary-dark: #3a5bc9;
+            --secondary-color: #f8f9fa;
+            --text-color: #333;
+            --light-gray: #e9ecef;
+            --border-color: #dee2e6;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header styles */
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px 0;
+        }
+
+        header h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+
+        header p {
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+
+        /* Main content styles */
+        main {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        /* Upload container styles */
+        .upload-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .drop-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .drop-area.highlight {
+            border-color: var(--primary-color);
+            background-color: rgba(74, 109, 229, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            color: #6c757d;
+        }
+
+        .browse-button {
+            color: var(--primary-color);
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .browse-button:hover {
+            text-decoration: underline;
+        }
+
+        .file-info {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: var(--light-gray);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .remove-button {
+            background: none;
+            border: none;
+            color: var(--danger-color);
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .upload-button-container {
+            display: flex;
+            justify-content: center;
+        }
+
+        .upload-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .upload-button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .upload-button:disabled {
+            background-color: #b3b3b3;
+            cursor: not-allowed;
+        }
+
+        /* Results container styles */
+        .results-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        .results-header h2 {
+            color: var(--primary-color);
+        }
+
+        .new-upload-button {
+            background-color: var(--light-gray);
+            border: none;
+            border-radius: 6px;
+            padding: 8px 15px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background-color 0.3s;
+        }
+
+        .new-upload-button:hover {
+            background-color: var(--border-color);
+        }
+
+        .results-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .image-preview-container h3,
+        .analysis-results h3 {
+            margin-bottom: 15px;
+            color: #495057;
+        }
+
+        .image-preview {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            max-height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+        }
+
+        .description-container {
+            background-color: var(--secondary-color);
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 200px;
+            white-space: pre-line;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            margin: 20px auto;
+            width: 70px;
+            text-align: center;
+        }
+
+        .spinner > div {
+            width: 18px;
+            height: 18px;
+            background-color: var(--primary-color);
+            border-radius: 100%;
+            display: inline-block;
+            animation: sk-bouncedelay 1.4s infinite ease-in-out both;
+        }
+
+        .spinner .bounce1 {
+            animation-delay: -0.32s;
+        }
+
+        .spinner .bounce2 {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes sk-bouncedelay {
+            0%, 80%, 100% { 
+                transform: scale(0);
+            } 40% { 
+                transform: scale(1.0);
+            }
+        }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .loading-overlay p {
+            color: white;
+            margin-top: 20px;
+            font-size: 1.2rem;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+            text-align: center;
+        }
+
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .close-button:hover {
+            color: black;
+        }
+
+        .modal h3 {
+            color: var(--danger-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .modal-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 20px;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .modal-button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        /* Footer styles */
+        footer {
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 40px;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .results-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .image-preview {
+                max-height: 250px;
+            }
+            
+            .image-preview img {
+                max-height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-eye"></i> Error Scanner</h1>
+            <p>Upload handwritten alphabets and numbers to detect errors</p>
+        </header>
+
+        <main>
+            <div class="upload-container">
+                <div id="drop-area" class="drop-area">
+                    <form id="upload-form" enctype="multipart/form-data">
+                        <input type="file" id="file-input" accept=".jpg, .jpeg, .png" hidden>
+                        <label for="file-input" class="file-label">
+                            <div class="upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <div class="upload-text">
+                                <span>Drag & drop an image here or</span>
+                                <span class="browse-button">Browse Files</span>
+                            </div>
+                            <div class="file-info" id="file-info" style="display: none;">
+                                <span id="file-name"></span>
+                                <button type="button" id="remove-file" class="remove-button">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </label>
+                    </form>
+                </div>
+
+                <div class="upload-button-container">
+                    <button id="upload-button" class="upload-button" disabled>
+                        <i class="fas fa-paper-plane"></i> Analyze Image
+                    </button>
+                </div>
+            </div>
+
+            <div class="results-container" id="results-container" style="display: none;">
+                <div class="results-header">
+                    <h2>Analysis Results</h2>
+                    <button id="new-upload-button" class="new-upload-button">
+                        <i class="fas fa-plus"></i> New Upload
+                    </button>
+                </div>
+                
+                <div class="results-content">
+                    <div class="image-preview-container">
+                        <h3>Uploaded Image</h3>
+                        <div class="image-preview">
+                            <img id="preview-image" src="" alt="Preview">
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-results">
+                        <h3>Error Analysis</h3>
+                        <div id="loading-spinner" class="spinner">
+                            <div class="bounce1"></div>
+                            <div class="bounce2"></div>
+                            <div class="bounce3"></div>
+                        </div>
+                        <div id="description-container" class="description-container">
+                            <p id="description-text"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Error Scanner. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner">
+            <div class="bounce1"></div>
+            <div class="bounce2"></div>
+            <div class="bounce3"></div>
+        </div>
+        <p>Analyzing your image...</p>
+    </div>
+
+    <div id="error-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h3><i class="fas fa-exclamation-triangle"></i> Error</h3>
+            <p id="error-message"></p>
+            <button id="error-ok-button" class="modal-button">OK</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const dropArea = document.getElementById('drop-area');
+            const fileInput = document.getElementById('file-input');
+            const fileInfo = document.getElementById('file-info');
+            const fileName = document.getElementById('file-name');
+            const removeFileBtn = document.getElementById('remove-file');
+            const uploadBtn = document.getElementById('upload-button');
+            const resultsContainer = document.getElementById('results-container');
+            const previewImage = document.getElementById('preview-image');
+            const descriptionText = document.getElementById('description-text');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const newUploadBtn = document.getElementById('new-upload-button');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const descriptionContainer = document.getElementById('description-container');
+            const errorModal = document.getElementById('error-modal');
+            const errorMessage = document.getElementById('error-message');
+            const closeButton = document.querySelector('.close-button');
+            const errorOkButton = document.getElementById('error-ok-button');
+
+            // Variables
+            let selectedFile = null;
+
+            // Event Listeners for drag and drop functionality
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                dropArea.classList.add('highlight');
+            }
+
+            function unhighlight() {
+                dropArea.classList.remove('highlight');
+            }
+
+            // Handle file drop
+            dropArea.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length) {
+                    handleFiles(files);
+                }
+            }
+
+            // Handle file selection
+            fileInput.addEventListener('change', function() {
+                if (fileInput.files.length) {
+                    handleFiles(fileInput.files);
+                }
+            });
+
+            // Process the selected file
+            function handleFiles(files) {
+                const file = files[0];
+                
+                // Validate file type
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                if (!validTypes.includes(file.type)) {
+                    showError('Please select a valid image file (JPG, JPEG, or PNG).');
+                    resetFileInput();
+                    return;
+                }
+                
+                // Validate file size (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    showError('File size exceeds 5MB limit. Please select a smaller image.');
+                    resetFileInput();
+                    return;
+                }
+                
+                selectedFile = file;
+                
+                // Display file name
+                fileName.textContent = file.name;
+                fileInfo.style.display = 'flex';
+                
+                // Enable upload button
+                uploadBtn.disabled = false;
+                
+                // Create preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // Handle remove file button
+            removeFileBtn.addEventListener('click', function() {
+                resetFileInput();
+            });
+
+            // Reset file input
+            function resetFileInput() {
+                fileInput.value = '';
+                fileInfo.style.display = 'none';
+                uploadBtn.disabled = true;
+                selectedFile = null;
+            }
+
+            // Handle upload button click
+            uploadBtn.addEventListener('click', function() {
+                if (!selectedFile) return;
+                
+                // Show loading overlay
+                loadingOverlay.style.display = 'flex';
+                
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                
+                // Make API request to backend
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    
+                    // Hide loading overlay
+                    loadingOverlay.style.display = 'none';
+                    
+                    // Show results
+                    resultsContainer.style.display = 'block';
+                    loadingSpinner.style.display = 'none';
+                    descriptionContainer.style.display = 'block';
+                    descriptionText.textContent = data.description;
+                    
+                    // Hide upload container
+                    document.querySelector('.upload-container').style.display = 'none';
+                })
+                .catch(error => {
+                    // Hide loading overlay
+                    loadingOverlay.style.display = 'none';
+                    
+                    // Show error message
+                    showError(error.message || 'An error occurred while processing your request.');
+                });
+            });
+
+            // Handle new upload button click
+            newUploadBtn.addEventListener('click', function() {
+                // Reset file input
+                resetFileInput();
+                
+                // Hide results container
+                resultsContainer.style.display = 'none';
+                
+                // Show upload container
+                document.querySelector('.upload-container').style.display = 'flex';
+                
+                // Reset description
+                descriptionText.textContent = '';
+                
+                // Reset spinner and description container
+                loadingSpinner.style.display = 'block';
+                descriptionContainer.style.display = 'none';
+                
+                // Send request to clear session if needed
+                fetch('/clear', {
+                    method: 'POST'
+                }).catch(error => {
+                    console.error('Error clearing session:', error);
+                });
+            });
+
+            // Error modal handling
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorModal.style.display = 'flex';
+            }
+
+            closeButton.addEventListener('click', closeModal);
+            errorOkButton.addEventListener('click', closeModal);
+            errorModal.addEventListener('click', function(e) {
+                if (e.target === errorModal) {
+                    closeModal();
+                }
+            });
+
+            function closeModal() {
+                errorModal.style.display = 'none';
+            }
+
+            // For demo purposes, you can add a mock image analysis
+            // This will only be used when the backend is not available
+            uploadBtn.addEventListener('click', function(e) {
+                // Check if we're running locally without backend
+                if (window.location.protocol === 'file:' || window.location.hostname === 'localhost') {
+                    e.preventDefault();
+                    
+                    // Show loading overlay for 2 seconds to simulate processing
+                    loadingOverlay.style.display = 'flex';
+                    
+                    setTimeout(function() {
+                        // Hide loading overlay
+                        loadingOverlay.style.display = 'none';
+                        
+                        // Show results
+                        resultsContainer.style.display = 'block';
+                        loadingSpinner.style.display = 'none';
+                        descriptionContainer.style.display = 'block';
+                        
+                        // Sample response for demo
+                        descriptionText.textContent = "DEMO MODE: This is a sample analysis.\n\nI found several potential errors in the handwriting:\n\n1. The number '4' appears to be written with an open top, which could be confused with the number '9'.\n\n2. The letter 'b' is written in a way that resembles the letter 'd'.\n\n3. The number '7' is missing the horizontal stroke, making it potentially confusable with the number '1'.\n\nConsider making these characters more distinct to improve readability.";
+                        
+                        // Hide upload container
+                        document.querySelector('.upload-container').style.display = 'none';
+                    }, 2000);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
